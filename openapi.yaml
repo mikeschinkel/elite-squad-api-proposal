@@ -1,0 +1,217 @@
+openapi: "3.0.0"
+# See https://swagger.io/docs/specification/
+# This is a VERY early strawman proposal: https://en.wikipedia.org/wiki/Straw_man_proposal
+info:
+  version: "0.1.0"
+  title: Proposed API design for Tom Clancy's Elite Squad game
+
+components:
+  schemas:
+    Error:
+      type: object
+      required:
+        - status
+        - code
+        - message
+      properties:
+        status:
+          type: integer
+          format: int32
+        code:
+          type: string
+        message:
+          type: string
+    Gamer:
+      type: object
+      properties:
+        name:
+          type: string
+          description: A gamer's in-game name
+          example:
+            Mike
+        number:
+          type: integer
+          description: A gamer's in-game \#{number}
+          minimum: 0
+          example:
+            363
+        level:
+          type: integer
+          minimum: 0
+          maximum: 60
+        favorite_solider_name:
+          type: string
+          description: Name of gamer's favorite solider based on usage
+          example:
+            Doc
+        soldiers:
+          $ref: '#/components/schemas/GamerSoldiers'
+        arena_stats:
+          $ref: '#/components/schemas/GamerArenaStats'
+        guild_name:
+          type: string
+          description: Name of gamer's guild
+          example:
+            Eagle One
+        guild_stats:
+          $ref: '#/components/schemas/GamerGuildStats'
+        campaign_stats:
+          type:object
+          description: A dictionary of campaigns and their percent completions
+          additionalProperties:
+            type: integer
+            minimum: 0
+            maximum: 100
+          example:
+            obtainr: 95
+            allies: 78
+            underworld: 47
+            close-quarters: 32
+
+
+    GamerArenaStats:
+      type: object
+      properties:
+        position:
+          type: integer
+          minimum: 1
+          description: Position of gamer in current Arena at time of API call
+        played:
+          type: integer
+          minimum: 0
+          description: Number of matches played by gamer
+        wins:
+          type: integer
+          minimum: 0
+          description: Number of matches won by gamer
+    GamerGuildStats:
+      type: object
+      properties:
+        position:
+          type: integer
+          minimum: 1
+          description: Position of gamer within current territory war  #is this correct?
+        played:
+          type: integer
+          minimum: 0
+          description: Number of territory matches played by gamer
+        wins:
+          type: integer
+          minimum: 0
+          description: Number of territory matches won by gamer
+
+
+    GamerSoldier:
+      type: object
+      description: Stats for a Solider that are specific to a Gamer
+      properties:
+        name:
+          type: string
+          example:
+            Anna Grimsdottir
+            Doc
+            El Sueno
+            Weaver
+        rank:
+          type: integer
+          minimum: 1
+          maximum: 10
+        level:
+          type: integer
+          minimum: 1
+          maximum: 60
+        gear:
+          $ref: '#/components/schemas/Gear'
+        weapon:
+          type: integer
+        dps:
+          type: integer
+          example:
+            293
+            413
+            1035
+        power:
+          type: integer
+          example:
+            117
+            11530
+            47193
+    GamerSoldiers:
+      type: array
+      description: List of GamerSolider objects
+      minItems: 1
+      items:
+        $ref: '#/components/schemas/GamerSoldier'
+    Gear:
+      type: object
+      description: Gear level and acquired status for a GamerSoldier
+      properties:
+        level:
+          type: integer
+          minimum: 1
+          maximum: 10
+        acquired:         # Is there a better word than `acquired` for this?
+          type: array
+          minItems: 4
+          maxItems: 4
+          items:
+            type: boolean
+
+  parameters:
+    authorization:
+      name: Authorization
+      description: Auth using a Bearer token, e.g. 'Bearer 6cf05230-15a6-2270-9e9f-d2c74919fe92`
+      in: header
+      required: true
+      schema:
+        type: string
+      examples:
+        valid:
+          externalValue: 'https://docs.api.elitesquadgame/authorization'
+        invalid:
+          value: 'abcdefghijklmnopqrstuvwxyz1234567890ABCD'
+
+    gamer_id:
+      name: gamer_id
+      description: Gamer ID found in the game under Settings > Contact
+      in: path
+      required: true
+      schema:
+        type: string
+      examples:
+        sample:
+          value: 4cf052f0-15c6-4270-ae9f-52c74919fe58
+
+paths:
+
+  /v1/gamers/{gamer_id}:
+    put:
+      operationId: putGamer
+      responses:
+        405:
+          description: Cannot update gamer
+    delete:
+      operationId: deleteGamer
+      responses:
+        405:
+          description: Cannot delete gamer
+    post:
+      operationId: postGamer
+      responses:
+        405:
+          description: Cannot POST to gamer
+    get:
+      operationId: GetGamer
+      description: Get stats for gamer
+      parameters:
+        - $ref: '#/components/parameters/gamer_id'
+      responses:
+        404:
+          description: Gamer not found
+        200:
+          description: Successfully retrieved Gamer stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Gamer'
+
